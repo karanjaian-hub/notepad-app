@@ -9,7 +9,10 @@ import io.vertx.ext.auth.PubSecKeyOptions;
 
 public class JwtUtil {
 
-  private static final String SECRET = "my_super_secret_key_change_this_to_something_long";
+  private static final String SECRET = System.getenv().getOrDefault(
+    "JWT_SECRET",
+    "my_super_secret_key_change_this_to_something_long_enough"
+  );
 
   public static JWTAuth createJwtProvider(Vertx vertx) {
     JWTAuthOptions config = new JWTAuthOptions()

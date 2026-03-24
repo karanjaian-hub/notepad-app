@@ -15,10 +15,13 @@ import io.vertx.sqlclient.Pool;
 public class RouterVerticle extends VerticleBase {
 
   private final Pool pool;
+  private final int  port;  // ✅ added
   private JWTAuth jwtAuth;
 
-  public RouterVerticle(Pool pool) {
+  // ✅ Updated constructor to accept port
+  public RouterVerticle(Pool pool, int port) {
     this.pool = pool;
+    this.port = port;
   }
 
   @Override
@@ -27,38 +30,29 @@ public class RouterVerticle extends VerticleBase {
 
     Router router = Router.router(vertx);
 
-    // Parse request bodies (required for POST/PUT)
     router.route().handler(BodyHandler.create());
-
-    // Redirect root to app
     router.get("/").handler(ctx -> ctx.redirect("/app/index.html"));
-
-    // Serve frontend static files from resources/webroot
     router.route("/app/*").handler(StaticHandler.create("webroot"));
 
-    // ── Public auth routes ────────────────────────────────────────
     router.post("/api/auth/signup").handler(this::handleSignup);
     router.post("/api/auth/login").handler(this::handleLogin);
 
-    // ── Protected routes — JWT required ───────────────────────────
     router.route("/api/notes/*").handler(JWTAuthHandler.create(jwtAuth));
-    router.route("/api/queue/*").handler(JWTAuthHandler.create(jwtAuth));
-
-    // Notes — GET and DELETE stay direct, POST and PUT go through queue
     router.get("/api/notes").handler(this::handleGetNotes);
     router.post("/api/notes").handler(this::handleCreateNoteQueued);
     router.put("/api/notes/:id").handler(this::handleUpdateNoteQueued);
     router.delete("/api/notes/:id").handler(this::handleDeleteNote);
-
-    // Queue status endpoint
     router.get("/api/queue/status").handler(this::handleQueueStatus);
 
+    // ✅ Use the port from environment variable
     return vertx.createHttpServer()
       .requestHandler(router)
-      .listen(8080)
-      .onSuccess(s -> System.out.println("🚀 Server running on http://localhost:8080"))
+      .listen(port)
+      .onSuccess(s -> System.out.println("🚀 Server running on port " + port))
       .mapEmpty();
   }
+
+  // ... rest of your handlers stay exactly the same
 
   // ═════════════════════════════════════════════════════════════════
   // AUTH HANDLERS
