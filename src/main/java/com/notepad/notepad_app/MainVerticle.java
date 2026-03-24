@@ -21,7 +21,7 @@ public class MainVerticle extends VerticleBase {
     // Railway sets these automatically when you add a PostgreSQL plugin
     // Locally they fall back to your laptop values
     String dbHost     = System.getenv().getOrDefault("PGHOST",     "postgres.railway.internal");
-    String dbPort     = System.getenv().getOrDefault("PGPORT",     "5432");
+    String dbPort     = System.getenv().getOrDefault("PGPORT",     "5433");
     String dbName     = System.getenv().getOrDefault("PGDATABASE", "railway");
     String dbUser     = System.getenv().getOrDefault("PGUSER",     "postgres");
     String dbPassword = System.getenv().getOrDefault("PGPASSWORD", "THEBbfPEdlicWICfmhGSyOXbpltIelxI");
