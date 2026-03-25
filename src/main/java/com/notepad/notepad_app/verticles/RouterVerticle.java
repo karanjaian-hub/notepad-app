@@ -167,35 +167,31 @@ public class RouterVerticle extends VerticleBase {
     }
 
     int userId;
-    try { userId = getUserId(ctx); }
-    catch (Exception e) { sendError(ctx, 401, "Invalid token"); return; }
+    try {
+      userId = getUserId(ctx);
+    } catch (Exception e) {
+      sendError(ctx, 401, "Invalid token");
+      return;
+    }
 
-    // Build the task — includes operation type so QueueVerticle
-    // knows which NoteVerticle handler to call
     JsonObject task = new JsonObject()
       .put("operation", "create")
       .put("userId",    userId)
       .put("title",     body.getString("title"))
       .put("content",   body.getString("content", ""));
 
-    // Send to the queue instead of directly to notes.create
-    vertx.eventBus().<JsonObject>request("queue.note.save", task)
-      .onSuccess(reply -> {
-        JsonObject result = reply.body();
-        ctx.response()
-          .setStatusCode(202) // 202 Accepted — queued, not yet saved
-          .putHeader("Content-Type", "application/json")
-          .end(new JsonObject()
-            .put("success",   true)
-            .put("queued",    true)
-            .put("messageId", result.getString("messageId"))
-            .put("position",  result.getInteger("position"))
-            .put("message",   "Note queued for saving")
-            .encode());
-      })
-      .onFailure(err -> sendError(ctx, 500, err.getMessage()));
-  }
+    // Fire and forget — no reply needed, queue handles it async
+    vertx.eventBus().send("queue.note.save", task);
 
+    ctx.response()
+      .setStatusCode(202)
+      .putHeader("Content-Type", "application/json")
+      .end(new JsonObject()
+        .put("success", true)
+        .put("queued",  true)
+        .put("message", "Note queued for saving")
+        .encode());
+  }
   private void handleUpdateNoteQueued(RoutingContext ctx) {
     JsonObject body = ctx.body().asJsonObject();
     if (body == null) {
@@ -213,24 +209,24 @@ public class RouterVerticle extends VerticleBase {
       return;
     }
 
-    // Build the task
     JsonObject task = new JsonObject()
       .put("operation", "update")
       .put("userId",    userId)
       .put("noteId",    noteId)
-      .put("title",     body.getString("title",   ""))
+      .put("title",     body.getString("title", ""))
       .put("content",   body.getString("content", ""));
 
-    vertx.eventBus().<JsonObject>request("queue.note.save", task)
-      .onSuccess(reply -> ctx.response()
-        .setStatusCode(202)
-        .putHeader("Content-Type", "application/json")
-        .end(new JsonObject()
-          .put("success", true)
-          .put("queued",  true)
-          .put("message", "Note update queued")
-          .encode()))
-      .onFailure(err -> sendError(ctx, 500, err.getMessage()));
+    // Fire and forget — no reply needed, queue handles it async
+    vertx.eventBus().send("queue.note.save", task);
+
+    ctx.response()
+      .setStatusCode(202)
+      .putHeader("Content-Type", "application/json")
+      .end(new JsonObject()
+        .put("success", true)
+        .put("queued",  true)
+        .put("message", "Note update queued")
+        .encode());
   }
 
   // ═════════════════════════════════════════════════════════════════

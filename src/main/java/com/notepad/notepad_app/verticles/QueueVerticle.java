@@ -53,25 +53,17 @@ public class QueueVerticle extends VerticleBase {
   private void handleEnqueue(Message<JsonObject> message) {
     JsonObject task = message.body();
 
-    // Add metadata to the task before queuing
-    task.put("queuedAt",  System.currentTimeMillis()); // when it was queued
-    task.put("messageId", java.util.UUID.randomUUID().toString()); // unique ID
+    task.put("queuedAt",  System.currentTimeMillis());
+    task.put("messageId", java.util.UUID.randomUUID().toString());
 
-    // Add to the back of the queue
     noteQueue.offer(task);
 
     System.out.println("📥 Task queued — queue size: " + noteQueue.size()
       + " | active workers: " + activeWorkers);
 
-    // Reply immediately to the browser — do not make the user wait
-    // The actual save happens asynchronously in the background
-    message.reply(new JsonObject()
-      .put("success",   true)
-      .put("queued",    true)
-      .put("position",  noteQueue.size())
-      .put("messageId", task.getString("messageId")));
+    // ✅ No message.reply() needed — RouterVerticle already sent 202
+    // and is not waiting for a response
 
-    // Try to process the queue
     drainQueue();
   }
 
