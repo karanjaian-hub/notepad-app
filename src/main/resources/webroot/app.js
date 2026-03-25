@@ -437,16 +437,26 @@ async function pollForSave(title, isNew, attemptsLeft) {
             const notes = data.notes || [];
 
             if (isNew) {
-                // For a NEW note — match by title AND created within the last 10 seconds
-                // This prevents matching older notes with the same title
-                const tenSecondsAgo = Date.now() - 10000;
-                const found = notes.find(n =>
-                    n.title === title &&
-                    new Date(n.createdAt).getTime() > tenSecondsAgo
-                );
+                // ✅ Widen the window to 60 seconds to account for
+                // server time differences and slow connections
+                const sixtySecondsAgo = Date.now() - 60000;
+
+                const found = notes.find(n => {
+                    if (n.title !== title) return false;
+
+                    // ✅ Fix date parsing — LocalDateTime from Java has no
+                    // timezone suffix. Adding 'Z' tells JS to treat it as UTC
+                    // preventing NaN or wrong time comparisons
+                    const rawDate   = n.createdAt || '';
+                    const dateStr   = rawDate.includes('Z') || rawDate.includes('+')
+                        ? rawDate
+                        : rawDate + 'Z';
+                    const createdMs = new Date(dateStr).getTime();
+
+                    return createdMs > sixtySecondsAgo;
+                });
 
                 if (found) {
-                    // Assign the real database ID — future saves now use PUT not POST
                     currentNoteId = found.id;
                     isDirty       = false;
                     isSaving      = false;
@@ -455,27 +465,25 @@ async function pollForSave(title, isNew, attemptsLeft) {
                     toast('Note created', 'success');
                     renderNoteList(notes);
 
-                    // Highlight the new note in the sidebar
                     document.querySelectorAll('.note-item').forEach(el => {
                         const t = el.querySelector('.note-item-title');
                         if (t && t.textContent === title) el.classList.add('active');
                     });
 
                 } else {
-                    // Not confirmed yet — try again
+                    // ✅ Log what we got to help debug if it fails again
+                    console.log('Poll attempt ' + (21 - attemptsLeft) + ' — notes received:',
+                        notes.map(n => ({ id: n.id, title: n.title, createdAt: n.createdAt })));
                     pollForSave(title, isNew, attemptsLeft - 1);
                 }
 
             } else {
-                // For an EXISTING note — we already know the ID
-                // Just refresh the list to show updated timestamp
                 isDirty  = false;
                 isSaving = false;
                 setSaveStatus('✓ saved');
                 setTimeout(() => setSaveStatus(''), 2500);
                 renderNoteList(notes);
 
-                // Re-highlight current note after list re-render
                 document.querySelectorAll('.note-item').forEach(el => {
                     const t = el.querySelector('.note-item-title');
                     if (t && t.textContent === title) el.classList.add('active');
