@@ -1,10 +1,8 @@
 package com.notepad.notepad_app.verticles;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.VerticleBase;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.LinkedList;

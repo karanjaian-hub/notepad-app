@@ -17,17 +17,16 @@ public class MainVerticle extends VerticleBase {
   @Override
   public Future<Void> start() {
 
-    // ── Read from environment variables ───────────────────────
-    // Railway sets these automatically when you add a PostgreSQL plugin
-    // Locally they fall back to your laptop values
+ // Read/get from environment variables in railway
+ // Locally they fall back to your laptop values
     String dbHost     = System.getenv().getOrDefault("PGHOST",     "localhost");
-    String dbPort     = System.getenv().getOrDefault("PGPORT",     "5432");
+    String dbPort     = System.getenv().getOrDefault("PGPORT",     "5433");
     String dbName     = System.getenv().getOrDefault("PGDATABASE", "notepad_db");
     String dbUser     = System.getenv().getOrDefault("PGUSER",     "postgres");
-    String dbPassword = System.getenv().getOrDefault("PGPASSWORD", "your_local_password");
+    String dbPassword = System.getenv().getOrDefault("PGPASSWORD", "postgres");
 
-    // Railway assigns a random port via PORT env variable
-    // Fall back to 8080 for local development
+  // a random port is assigned by railway
+  // Fall back to 8080 for local development
     int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
     System.out.println("🔧 Connecting to database: " + dbHost + ":" + dbPort + "/" + dbName);

@@ -40,8 +40,7 @@ public class NoteVerticle extends VerticleBase {
             .put("id",        row.getInteger("id"))
             .put("title",     row.getString("title"))
             .put("content",   row.getString("content"))
-            // ✅ Append Z to make it a valid UTC ISO string
-            // JavaScript's new Date() parses this correctly
+  // Append Z to make it a valid UTC ISO string
             .put("createdAt", row.getLocalDateTime("created_at").toString() + "Z")
             .put("updatedAt", row.getLocalDateTime("updated_at").toString() + "Z"));
         }
